@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ของหาย–ของพบ มหาวิทยาลัย</title>
+<style>
+  :root { --bg:#f4f6fa; --card:#fff; --text:#1d2433; --muted:#68708a; --line:#dde2ee;
+          --primary:#1f4e9c; --lost:#c0392b; --found:#1e8449; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Sarabun","Noto Sans Thai",system-ui,sans-serif; background:var(--bg); color:var(--text); }
+  header { background:var(--primary); color:#fff; padding:18px 20px; }
+  header h1 { margin:0; font-size:1.4rem; }
+  header p { margin:4px 0 0; opacity:.85; font-size:.95rem; }
+  main { max-width:1100px; margin:20px auto; padding:0 16px; display:grid; gap:20px; grid-template-columns:minmax(0,380px) minmax(0,1fr); }
+  @media (max-width:820px) { main { grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+  h2 { margin:0 0 12px; font-size:1.1rem; }
+  label { display:block; margin:12px 0 4px; font-size:.9rem; font-weight:600; }
+  input[type=text], input[type=email], select, textarea { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; }
+  textarea { min-height:70px; resize:vertical; }
+  .types { display:flex; gap:10px; }
+  .types label { flex:1; margin:0; font-weight:600; border:2px solid var(--line); border-radius:8px; padding:9px; text-align:center; cursor:pointer; }
+  .types input { display:none; }
+  .types input:checked + span { color:#fff; }
+  .types label:has(input[value=lost]:checked) { background:var(--lost); border-color:var(--lost); color:#fff; }
+  .types label:has(input[value=found]:checked) { background:var(--found); border-color:var(--found); color:#fff; }
+  button { font:inherit; cursor:pointer; border:0; border-radius:8px; padding:10px 16px; background:var(--primary); color:#fff; font-weight:600; }
+  button:disabled { opacity:.5; cursor:wait; }
+  button.ghost { background:#fff; color:var(--primary); border:1px solid var(--primary); padding:6px 12px; }
+  #submit { width:100%; margin-top:16px; }
+  #msg { margin-top:12px; padding:10px; border-radius:8px; display:none; font-size:.95rem; }
+  #msg.ok { display:block; background:#e6f4ea; color:#1e6b3a; }
+  #msg.err { display:block; background:#fdecea; color:#a1261b; }
+  .hint { color:var(--muted); font-size:.82rem; margin-top:4px; }
+  .toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+  .toolbar .grow { flex:1; }
+  .tab { background:#fff; color:var(--text); border:1px solid var(--line); padding:6px 12px; }
+  .tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .item { display:flex; gap:12px; padding:12px 0; border-top:1px solid var(--line); }
+  .item:first-child { border-top:0; }
+  .thumb { width:84px; height:84px; flex:none; border-radius:8px; background:#e9edf5; object-fit:cover; }
+  .badge { display:inline-block; font-size:.75rem; font-weight:700; color:#fff; border-radius:999px; padding:2px 9px; }
+  .badge.lost { background:var(--lost); } .badge.found { background:var(--found); }
+  .item h3 { margin:4px 0; font-size:1rem; }
+  .meta { color:var(--muted); font-size:.85rem; }
+  .empty { text-align:center; padding:30px 10px; color:var(--muted); background:#f8f9fc; border-radius:8px; }
+  #matches { margin-top:14px; display:none; }
+  #matches h3 { margin:0 0 6px; font-size:1rem; color:var(--found); }
+</style>
+</head>
+<body>
+<header>
+  <h1>ของหาย–ของพบ มหาวิทยาลัย</h1>
+  <p>แจ้งของหาย แจ้งเก็บของได้ ระบบจะส่งอีเมลหาเจ้าของให้อัตโนมัติเมื่อพบรายการที่ตรงกัน</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>แจ้งรายการใหม่</h2>
+    <div class="types">
+      <label><input type="radio" name="type" value="lost" checked><span>ของหาย</span></label>
+      <label><input type="radio" name="type" value="found"><span>เก็บของได้</span></label>
+    </div>
+
+    <label for="title">ชื่อสิ่งของ</label>
+    <input type="text" id="title" maxlength="100" placeholder="เช่น กระเป๋าสตางค์สีดำ">
+
+    <label for="category">หมวดหมู่</label>
+    <select id="category"></select>
+
+    <label for="location">สถานที่</label>
+    <select id="location"></select>
+
+    <label for="description">รายละเอียดเพิ่มเติม (ไม่บังคับ)</label>
+    <textarea id="description" maxlength="500" placeholder="ลักษณะเด่น สี ยี่ห้อ เวลาที่พบ/หาย"></textarea>
+
+    <label for="email">อีเมลของคุณ</label>
+    <input type="email" id="email" maxlength="120" placeholder="name@example.com">
+    <div class="hint">อีเมลไม่แสดงบนเว็บ ใช้ส่งแจ้งเตือนเมื่อมีรายการตรงกันเท่านั้น</div>
+
+    <label for="photo">แนบรูป (ไม่บังคับ)</label>
+    <input type="file" id="photo" accept="image/*">
+
+    <button id="submit">ส่งรายการ</button>
+    <div id="msg"></div>
+    <div id="matches"><h3>รายการที่อาจตรงกัน</h3><div id="matchList"></div></div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <h2 class="grow" style="margin:0">รายการล่าสุด</h2>
+      <button class="tab active" data-filter="all">ทั้งหมด</button>
+      <button class="tab" data-filter="lost">ของหาย</button>
+      <button class="tab" data-filter="found">เก็บได้</button>
+      <button class="ghost" id="refresh">รีเฟรช</button>
+    </div>
+    <div id="list"></div>
+  </section>
+</main>
+
+<script>
+const CATEGORIES = ["กระเป๋า/กระเป๋าสตางค์","โทรศัพท์/อุปกรณ์อิเล็กทรอนิกส์","กุญแจ","บัตรนักศึกษา/เอกสาร","เสื้อผ้า/เครื่องประดับ","หนังสือ/เครื่องเขียน","อื่น ๆ"];
+const LOCATIONS  = ["โรงอาหาร","ห้องสมุด","อาคารเรียน","ลานจอดรถ","สนามกีฬา","หอพัก","อื่น ๆ"];
+const $ = id => document.getElementById(id);
+let allItems = [], filter = "all";
+
+function fillSelect(el, values) {
+  values.forEach(v => { const o = document.createElement("option"); o.value = o.textContent = v; el.appendChild(o); });
+}
+fillSelect($("category"), CATEGORIES);
+fillSelect($("location"), LOCATIONS);
+
+function showMsg(text, ok) { const m = $("msg"); m.textContent = text; m.className = ok ? "ok" : "err"; }
+
+// ย่อรูปก่อนส่ง (สูงสุด 800px, JPEG) ให้เล็กพอสำหรับ Lambda
+function shrinkImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, 800 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => reject(new Error("เปิดไฟล์รูปไม่ได้ ลองใช้ไฟล์ JPG หรือ PNG"));
+    img.src = url;
+  });
+}
+
+function renderItem(it) {
+  const row = document.createElement("div"); row.className = "item";
+  let thumb;
+  if (it.image_url) { thumb = document.createElement("img"); thumb.src = it.image_url; thumb.alt = it.title; }
+  else { thumb = document.createElement("div"); }
+  thumb.className = "thumb";
+  const info = document.createElement("div");
+  const badge = document.createElement("span");
+  badge.className = "badge " + it.type; badge.textContent = it.type === "lost" ? "ของหาย" : "เก็บได้";
+  const h = document.createElement("h3"); h.textContent = it.title;
+  const meta = document.createElement("div"); meta.className = "meta";
+  meta.textContent = it.category + " · " + it.location + " · " + new Date(it.created_at * 1000).toLocaleString("th-TH");
+  info.append(badge, h, meta);
+  if (it.description) { const d = document.createElement("div"); d.textContent = it.description; info.appendChild(d); }
+  row.append(thumb, info);
+  return row;
+}
+
+function renderList() {
+  const box = $("list"); box.replaceChildren();
+  const items = allItems.filter(i => filter === "all" || i.type === filter);
+  if (!items.length) { const e = document.createElement("div"); e.className = "empty"; e.textContent = "ยังไม่มีรายการ"; box.appendChild(e); return; }
+  items.forEach(i => box.appendChild(renderItem(i)));
+}
+
+async function loadItems() {
+  try {
+    const r = await fetch("/api/items");
+    const data = await r.json();
+    allItems = data.items || [];
+    renderList();
+  } catch (e) { showMsg("โหลดรายการไม่สำเร็จ", false); }
+}
+
+$("submit").addEventListener("click", async () => {
+  const btn = $("submit");
+  $("matches").style.display = "none";
+  const type = document.querySelector("input[name=type]:checked").value;
+  const payload = {
+    type, title: $("title").value.trim(), category: $("category").value, location: $("location").value,
+    description: $("description").value.trim(), email: $("email").value.trim()
+  };
+  if (!payload.title) return showMsg("กรุณากรอกชื่อสิ่งของ", false);
+  if (!payload.email) return showMsg("กรุณากรอกอีเมล", false);
+
+  btn.disabled = true; showMsg("กำลังส่งข้อมูล...", true);
+  try {
+    const file = $("photo").files[0];
+    if (file) payload.image = await shrinkImage(file);
+    const r = await fetch("/api/items", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "เกิดข้อผิดพลาด");
+
+    if (type === "lost") {
+      showMsg("บันทึกแล้ว ตรวจกล่องอีเมลเพื่อกดยืนยันการรับแจ้งเตือน (ครั้งแรกเท่านั้น)", true);
+      if (data.matches && data.matches.length) {
+        const ml = $("matchList"); ml.replaceChildren();
+        data.matches.forEach(m => ml.appendChild(renderItem(m)));
+        $("matches").style.display = "block";
+      }
+    } else {
+      showMsg(data.notified ? "บันทึกแล้ว และส่งอีเมลแจ้งเจ้าของ " + data.notified + " คน" : "บันทึกแล้ว ขอบคุณที่ช่วยเก็บของ", true);
+    }
+    $("title").value = ""; $("description").value = ""; $("photo").value = "";
+    loadItems();
+  } catch (e) { showMsg(e.message, false); }
+  finally { btn.disabled = false; }
+});
+
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  b.classList.add("active"); filter = b.dataset.filter; renderList();
+}));
+$("refresh").addEventListener("click", loadItems);
+loadItems();
+</script>
+</body>
+</html>
